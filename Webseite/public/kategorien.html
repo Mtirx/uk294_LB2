@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix's Games Kategorien</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .category-list {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar mit schwarzer Hintergrundfarbe -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <!-- Titel links ausgerichtet -->
+            <span class="navbar-brand">Matrix's Games</span>
+
+            <!-- Schaltfläche für Mobilansicht -->
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
+                aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Nav-Menü -->
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNavDropdown">
+                <ul class="navbar-nav">
+                    <!-- Link zurück zur Startseite -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="StartSeite.html">Startseite</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Kategorie-Liste in der Mitte -->
+            <div class="col-md-8">
+                <h3>Kategorien</h3>
+                <ul class="list-group" id="categoryList">
+                    <!-- Kategorien werden hier dynamisch eingefügt -->
+                </ul>
+            </div>
+
+            <!-- Formular zum Erstellen neuer Kategorien rechts -->
+            <div class="col-md-4">
+                <h3>Neue Kategorie erstellen</h3>
+                <form id="newCategoryForm">
+                    <div class="form-group">
+                        <label for="categoryName">Kategoriename</label>
+                        <input type="text" class="form-control" id="categoryName"
+                            placeholder="Kategoriename eingeben" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kategorie hinzufügen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal zum Bearbeiten einer Kategorie -->
+    <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog"
+        aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCategoryModalLabel">Kategorie bearbeiten</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCategoryForm">
+                        <div class="form-group">
+                            <label for="editCategoryName">Kategoriename</label>
+                            <input type="text" class="form-control" id="editCategoryName" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Skripte -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Basis-URL der API
+        const apiUrl = 'http://localhost:3000'; // Beispiel-URL, ersetzen Sie dies durch Ihre tatsächliche API-URL
+
+        // Laden der Kategorien beim Laden der Seite
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            document.getElementById('newCategoryForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                createCategory();
+            });
+        });
+
+        // Funktion zum Laden der Kategorien
+        function loadCategories() {
+            fetch(`${apiUrl}/categories`)
+                .then(response => response.json())
+                .then(categories => {
+                    const categoryList = document.getElementById('categoryList');
+                    categoryList.innerHTML = ''; // Liste vor dem Einfügen leeren
+                    categories.forEach(category => {
+                        renderCategory(category);
+                    });
+                })
+                .catch(error => console.error('Error loading categories:', error));
+        }
+
+        // Funktion zum Rendern einer einzelnen Kategorie
+        function renderCategory(category) {
+            const categoryList = document.getElementById('categoryList');
+
+            const categoryItem = document.createElement('li');
+            categoryItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+            categoryItem.dataset.categoryId = category.id; // Datenattribut für die Kategorie-ID
+            categoryItem.textContent = category.name;
+
+            const editButton = document.createElement('button');
+            editButton.classList.add('btn', 'btn-secondary', 'btn-sm', 'mr-2');
+            editButton.textContent = 'Bearbeiten';
+            editButton.addEventListener('click', function () {
+                editCategory(category.id, category.name);
+            });
+
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm');
+            deleteButton.textContent = 'Löschen';
+            deleteButton.addEventListener('click', function () {
+                deleteCategory(category.id);
+            });
+
+            categoryItem.appendChild(editButton);
+            categoryItem.appendChild(deleteButton);
+
+            categoryList.appendChild(categoryItem);
+        }
+
+        // Funktion zum Hinzufügen einer neuen Kategorie
+        function createCategory() {
+            const categoryName = document.getElementById('categoryName').value;
+
+            const categoryData = {
+                name: categoryName
+            };
+
+            fetch(`${apiUrl}/categories`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(categoryData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to create category');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('Kategorie erstellt');
+                    loadCategories(); // Kategorien neu laden, um die aktualisierte Liste anzuzeigen
+                    document.getElementById('newCategoryForm').reset(); // Formular zurücksetzen
+                })
+                .catch(error => {
+                    console.error('Error creating category:', error);
+                    alert('Failed to create category');
+                });
+        }
+
+        // Funktion zum Bearbeiten einer Kategorie
+        function editCategory(categoryId, currentName) {
+            document.getElementById('editCategoryName').value = currentName;
+            $('#editCategoryModal').modal('show');
+
+            // Event Listener zum Speichern der Änderungen im Modal hinzufügen
+            document.getElementById('editCategoryForm').addEventListener('submit', function handleEdit(event) {
+                event.preventDefault();
+
+                const updatedCategoryName = document.getElementById('editCategoryName').value;
+
+                fetch(`${apiUrl}/categories/${categoryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ name: updatedCategoryName })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update category');
+                        }
+                        return response.json();
+                    })
+                    .then(updatedCategory => {
+                        const categoryItem = document.querySelector(`.list-group-item[data-category-id="${categoryId}"]`);
+                        if (categoryItem) {
+                            categoryItem.textContent = updatedCategory.name;
+                            loadCategories();
+                        }
+                        $('#editCategoryModal').modal('hide');
+                    })
+                    .catch(error => console.error('Error updating category:', error))
+                    .finally(() => {
+                        // Entfernen des Event Listeners nach der Bearbeitung
+                        document.getElementById('editCategoryForm').removeEventListener('submit', handleEdit);
+                    });
+            });
+        }
+
+        // Funktion zum Löschen einer Kategorie
+        function deleteCategory(categoryId) {
+            fetch(`${apiUrl}/categories/${categoryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete category');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Kategorie erfolgreich gelöscht, entferne sie auch aus der Benutzeroberfläche
+                    const categoryItem = document.querySelector(`.list-group-item[data-category-id="${categoryId}"]`);
+                    if (categoryItem) {
+                        categoryItem.remove();
+                        alert('Gelöscht');
+                    } else {
+                        console.error(`Category item with ID ${categoryId} not found in UI.`);
+                    }
+                })
+                .catch(error => console.error('Error deleting category:', error));
+        }
+    </script>
+</body>
+
+</html>

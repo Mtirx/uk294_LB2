@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmelden</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="text-center">
+        <h1 class="mb-4">Matrix's Games</h1>
+        <form id="loginForm" class="bg-white p-4 rounded shadow">
+            <div class="mb-3">
+                <label for="exampleInputUsername" class="form-label">Benutzername</label>
+                <input type="text" class="form-control" id="exampleInputUsername" aria-describedby="usernameHelp" name="username">
+                <small id="usernameHelp" class="form-text">Wir werden Ihren Benutzernamen niemals an Dritte weitergeben.</small>
+            </div>
+            <div class="mb-3">
+                <label for="exampleInputPassword1" class="form-label">Passwort</label>
+                <input type="password" class="form-control" id="exampleInputPassword1" name="password">
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Anmelden</button>
+            <small id="registerHelp" class="form-text text-muted">Noch kein Konto? <a href="Register.html">Jetzt registrieren</a></small>
+        </form>        
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Verhindert dass das Formular über den Browser abgesendet wird
+    
+            // Formularwerte abrufen
+            const username = document.getElementById('exampleInputUsername').value;
+            const password = document.getElementById('exampleInputPassword1').value;
+    
+            // POST-Anfrage an den /login-Endpunkt senden
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username, password: password})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Netzwerkantwort war nicht ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                localStorage.setItem('token', data.token);
+                window.location.href = 'StartSeite.html';
+            })
+            .catch(error => {
+                console.error('Fehler:', error);
+                // Fehler behandeln, Fehlermeldung an den Benutzer anzeigen
+            });
+        });
+    </script>
+</body>
+</html>
